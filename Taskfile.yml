@@ -102,6 +102,11 @@ tasks:
     cmds:
       - npm run test:e2e
 
+  db:seed:
+    desc: "Seed a demo user + monitor pointing at demo-target; requires `task up` first (equivalent: docker compose exec worker uv run python scripts/seed_demo_monitor.py)"
+    cmds:
+      - docker compose exec worker uv run python scripts/seed_demo_monitor.py
+
   ci:
     desc: "Run everything the CI pipeline runs (lint + typecheck + tests, backend and frontend)"
     cmds:

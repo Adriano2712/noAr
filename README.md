@@ -9,11 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 1 — modelagem de domínio. As tabelas `users`, `monitors`,
-> `checks` e `incidents` existem, com a máquina de estados de incidentes
-> (`UNKNOWN`/`UP`/`DOWN`/`PAUSED`) implementada e testada. Ainda não há API
-> de CRUD, autenticação, worker executando checagens reais nem alertas —
-> isso vem nas próximas fases.
+> **Status:** Fase 2 — worker real. O worker reivindica monitores vencidos
+> via `SELECT ... FOR UPDATE SKIP LOCKED`, faz a checagem HTTP de verdade
+> (com guarda básica contra SSRF) e aplica a máquina de estados de
+> incidentes. Ainda não há API de CRUD, autenticação nem alertas — monitores
+> só podem ser criados via `task db:seed` por enquanto.
 
 ## Stack
 
@@ -87,6 +87,7 @@ parênteses.
 | `task backend:test` | Testes do backend (`cd backend && uv run pytest`); requer Postgres acessível em `localhost:5432` (`task up`, ou pelo menos `docker compose up -d db`) |
 | `task db:upgrade` | Aplica as migrações pendentes no Postgres local |
 | `task db:revision -- "mensagem"` | Gera uma nova migração a partir de mudanças nos modelos |
+| `task db:seed` | Cria um usuário + monitor de demonstração apontando pro `demo-target` (requer `task up`) |
 | `task web:install` | Instala dependências do frontend (`cd web && npm install`) |
 | `task web:lint` | Lint do frontend (`cd web && npm run lint`) |
 | `task web:typecheck` | Checagem de tipos do frontend (`cd web && npm run typecheck`) |
@@ -106,8 +107,11 @@ docs/adr/   decisões de arquitetura (ADRs)
 ## Segurança
 
 Este projeto monitora URLs informadas por usuários, o que expõe risco de
-SSRF (Server-Side Request Forgery). Medidas de mitigação serão documentadas
-em ADR própria quando a validação de URLs for implementada.
+SSRF (Server-Side Request Forgery). O worker bloqueia esquemas diferentes de
+`http`/`https` e IPs privados/loopback/link-local resolvidos na hora da
+checagem (ver [ADR 0005](docs/adr/0005-protecao-basica-contra-ssrf.md)); a
+guarda ainda não fecha a janela de DNS rebinding, documentado na própria ADR
+como endurecimento futuro.
 
 ## Licença
 

@@ -65,6 +65,8 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://noar:noar_dev_password@db:5432/noar}
+      # Safe only because demo-target is our own container, not a user-supplied URL (see ADR 0005).
+      SSRF_ALLOW_PRIVATE_NETWORKS: "true"
     command: uv run python -m noar.worker.main
     volumes:
       - ./backend:/app

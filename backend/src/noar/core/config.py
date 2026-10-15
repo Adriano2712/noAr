@@ -25,6 +25,16 @@ class Settings(BaseSettings):
     webhook_receiver_url: str = "http://webhook-receiver:8080"
     demo_target_url: str = "http://demo-target:80"
 
+    scheduler_batch_size: int = 20
+    scheduler_lease_seconds: int = 60
+    scheduler_poll_interval_seconds: float = 5.0
+    scheduler_jitter_fraction: float = 0.1
+    scheduler_check_concurrency: int = 10
+
+    # Off by default (blocks private/loopback/link-local targets); the local
+    # Docker Compose demo turns this on so the worker can reach demo-target.
+    ssrf_allow_private_networks: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

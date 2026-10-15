@@ -34,6 +34,11 @@ strict = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# One event loop for the whole session: lets the DB engine fixture be
+# session-scoped too, so asyncpg isn't opening/closing a new physical
+# connection for every single test (flaky on Windows otherwise).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 
 [dependency-groups]
