@@ -1,0 +1,95 @@
+version: "3"
+
+# Every task here is also documented in README.md with its equivalent
+# plain `docker compose` / `uv` / `npm` command, for anyone without go-task.
+
+tasks:
+  up:
+    desc: "Start the full local stack (equivalent: docker compose up -d)"
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: "Stop the full local stack (equivalent: docker compose down)"
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: "Follow logs from all services (equivalent: docker compose logs -f)"
+    cmds:
+      - docker compose logs -f
+
+  build:
+    desc: "Build all service images (equivalent: docker compose build)"
+    cmds:
+      - docker compose build
+
+  backend:install:
+    desc: "Install backend dependencies (equivalent: cd backend && uv sync)"
+    dir: backend
+    cmds:
+      - uv sync
+
+  backend:lint:
+    desc: "Lint backend code (equivalent: cd backend && uv run ruff check .)"
+    dir: backend
+    cmds:
+      - uv run ruff check .
+
+  backend:format:
+    desc: "Format backend code (equivalent: cd backend && uv run ruff format .)"
+    dir: backend
+    cmds:
+      - uv run ruff format .
+
+  backend:typecheck:
+    desc: "Type-check backend code (equivalent: cd backend && uv run mypy src)"
+    dir: backend
+    cmds:
+      - uv run mypy src
+
+  backend:test:
+    desc: "Run backend tests (equivalent: cd backend && uv run pytest)"
+    dir: backend
+    cmds:
+      - uv run pytest
+
+  web:install:
+    desc: "Install frontend dependencies (equivalent: cd web && npm install)"
+    dir: web
+    cmds:
+      - npm install
+
+  web:lint:
+    desc: "Lint frontend code (equivalent: cd web && npm run lint)"
+    dir: web
+    cmds:
+      - npm run lint
+
+  web:typecheck:
+    desc: "Type-check frontend code (equivalent: cd web && npm run typecheck)"
+    dir: web
+    cmds:
+      - npm run typecheck
+
+  web:test:
+    desc: "Run frontend unit tests (equivalent: cd web && npm run test)"
+    dir: web
+    cmds:
+      - npm run test
+
+  web:e2e:
+    desc: "Run frontend e2e tests; requires `task up` first (equivalent: cd web && npm run test:e2e)"
+    dir: web
+    cmds:
+      - npm run test:e2e
+
+  ci:
+    desc: "Run everything the CI pipeline runs (lint + typecheck + tests, backend and frontend)"
+    cmds:
+      - task: backend:lint
+      - task: backend:typecheck
+      - task: backend:test
+      - task: web:lint
+      - task: web:typecheck
+      - task: web:test

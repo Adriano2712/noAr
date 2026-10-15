@@ -1,0 +1,95 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-noar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-noar_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-noar}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-noar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # SMTP
+
+  demo-target:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./demo-target:/usr/share/nginx/html:ro
+    ports:
+      - "8081:80"
+
+  webhook-receiver:
+    image: mendhak/http-https-echo:latest
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: 8080
+    ports:
+      - "8082:8080"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://noar:noar_dev_password@db:5432/noar}
+    command: uv run uvicorn noar.api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+      - api-venv:/app/.venv
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://noar:noar_dev_password@db:5432/noar}
+    command: uv run python -m noar.worker.main
+    volumes:
+      - ./backend:/app
+      - worker-venv:/app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  api-venv:
+  worker-venv:
