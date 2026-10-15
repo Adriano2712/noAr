@@ -15,7 +15,7 @@ class Check(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     monitor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("monitors.id"), index=True
+        UUID(as_uuid=True), ForeignKey("monitors.id", ondelete="CASCADE"), index=True
     )
 
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

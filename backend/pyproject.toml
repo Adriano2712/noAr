@@ -5,10 +5,14 @@ description = "NoAr: website and API uptime monitor"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",
+    "argon2-cffi>=25.1.0",
     "asyncpg>=0.32.0",
     "fastapi>=0.143.2",
     "httpx>=0.28.1",
     "pydantic-settings>=2.16.0",
+    "pydantic[email]>=2.14.1",
+    "pyjwt>=2.15.1",
+    "python-multipart>=0.0.32",
     "sqlalchemy[asyncio]>=2.1.4",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -27,6 +31,10 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# B008: FastAPI's dependency injection relies on Depends(...) as an argument
+# default; that's the framework's own idiom, not the mutable-default bug the
+# rule is meant to catch.
+ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"

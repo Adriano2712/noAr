@@ -46,7 +46,7 @@ jobs:
         run: uv run alembic upgrade head
         env:
           DATABASE_URL: postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar
-          API_SECRET_KEY: ci-only
+          API_SECRET_KEY: ci-only-secret-key-at-least-32-bytes-long
 
       - name: Test (pytest)
         run: uv run pytest

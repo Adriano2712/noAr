@@ -9,11 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 2 — worker real. O worker reivindica monitores vencidos
-> via `SELECT ... FOR UPDATE SKIP LOCKED`, faz a checagem HTTP de verdade
-> (com guarda básica contra SSRF) e aplica a máquina de estados de
-> incidentes. Ainda não há API de CRUD, autenticação nem alertas — monitores
-> só podem ser criados via `task db:seed` por enquanto.
+> **Status:** Fase 3 — CRUD de monitores + autenticação. Cada conta se
+> registra, faz login (token JWT) e só enxerga/gerencia os próprios
+> monitores (`POST/GET/PATCH/DELETE /monitors`, `.../pause`, `.../resume`).
+> Ainda não há frontend ligado à API, verificação de e-mail, alertas nem
+> página de status — isso vem nas próximas fases.
 
 ## Stack
 
@@ -104,14 +104,21 @@ demo-target/   página estática servida pelo serviço demo-target
 docs/adr/   decisões de arquitetura (ADRs)
 ```
 
+## Autenticação
+
+`POST /auth/register` (e-mail + senha) e `POST /auth/login` (devolve um
+token JWT). Use `Authorization: Bearer <token>` nas chamadas a `/monitors` e
+`/auth/me`. Detalhes e trade-offs em [ADR 0006](docs/adr/0006-autenticacao-via-jwt-bearer.md).
+
 ## Segurança
 
 Este projeto monitora URLs informadas por usuários, o que expõe risco de
-SSRF (Server-Side Request Forgery). O worker bloqueia esquemas diferentes de
-`http`/`https` e IPs privados/loopback/link-local resolvidos na hora da
-checagem (ver [ADR 0005](docs/adr/0005-protecao-basica-contra-ssrf.md)); a
-guarda ainda não fecha a janela de DNS rebinding, documentado na própria ADR
-como endurecimento futuro.
+SSRF (Server-Side Request Forgery). Tanto o cadastro de monitor quanto o
+worker bloqueiam esquemas diferentes de `http`/`https` e IPs
+privados/loopback/link-local resolvidos na hora (ver
+[ADR 0005](docs/adr/0005-protecao-basica-contra-ssrf.md)); a guarda ainda não
+fecha a janela de DNS rebinding, documentado na própria ADR como
+endurecimento futuro.
 
 ## Licença
 

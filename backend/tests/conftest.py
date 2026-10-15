@@ -1,11 +1,19 @@
 import os
-from collections.abc import AsyncGenerator
 
-import pytest
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+# Settings() requires these at import time (noar.api.main builds CORS from it),
+# and tests otherwise run without any .env file at all.
+os.environ.setdefault(
+    "DATABASE_URL", "postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar"
+)
+os.environ.setdefault("API_SECRET_KEY", "test-secret-key-at-least-32-bytes-long")
 
-from noar.db.base import Base
-from noar.db.models import Check, Incident, Monitor, User  # noqa: F401
+from collections.abc import AsyncGenerator  # noqa: E402
+
+import pytest  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine  # noqa: E402
+
+from noar.db.base import Base  # noqa: E402
+from noar.db.models import Check, Incident, Monitor, User  # noqa: E402, F401
 
 # Reuses the local docker compose `db` service by default. Tests that use
 # `db_session` run inside a rolled-back transaction each, so they never leave

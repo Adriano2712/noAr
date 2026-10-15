@@ -14,6 +14,8 @@ class Settings(BaseSettings):
 
     api_secret_key: str
     api_port: int = 8000
+    access_token_expire_minutes: int = 60 * 24
+    frontend_origin: str = "http://localhost:3000"
 
     smtp_host: str = "mailpit"
     smtp_port: int = 1025
