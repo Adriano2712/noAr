@@ -23,6 +23,7 @@ packages = ["src/noar"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -30,7 +31,6 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src/noar/core", "src/noar/db"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -9,10 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 0 — esqueleto do projeto. Ainda não há monitores,
-> incidentes nem alertas implementados; esta fase só valida que toda a
-> infraestrutura (banco, api, worker, frontend, CI) funciona de ponta a
-> ponta.
+> **Status:** Fase 1 — modelagem de domínio. As tabelas `users`, `monitors`,
+> `checks` e `incidents` existem, com a máquina de estados de incidentes
+> (`UNKNOWN`/`UP`/`DOWN`/`PAUSED`) implementada e testada. Ainda não há API
+> de CRUD, autenticação, worker executando checagens reais nem alertas —
+> isso vem nas próximas fases.
 
 ## Stack
 
@@ -83,7 +84,9 @@ parênteses.
 | `task backend:lint` | Lint do backend (`cd backend && uv run ruff check .`) |
 | `task backend:format` | Formata o backend (`cd backend && uv run ruff format .`) |
 | `task backend:typecheck` | Checagem de tipos do backend (`cd backend && uv run mypy src`) |
-| `task backend:test` | Testes do backend (`cd backend && uv run pytest`) |
+| `task backend:test` | Testes do backend (`cd backend && uv run pytest`); requer Postgres acessível em `localhost:5432` (`task up`, ou pelo menos `docker compose up -d db`) |
+| `task db:upgrade` | Aplica as migrações pendentes no Postgres local |
+| `task db:revision -- "mensagem"` | Gera uma nova migração a partir de mudanças nos modelos |
 | `task web:install` | Instala dependências do frontend (`cd web && npm install`) |
 | `task web:lint` | Lint do frontend (`cd web && npm run lint`) |
 | `task web:typecheck` | Checagem de tipos do frontend (`cd web && npm run typecheck`) |

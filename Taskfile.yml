@@ -49,10 +49,28 @@ tasks:
       - uv run mypy src
 
   backend:test:
-    desc: "Run backend tests (equivalent: cd backend && uv run pytest)"
+    desc: "Run backend tests; requires Postgres reachable on localhost:5432 (`task up`, or at least `docker compose up -d db`). Equivalent: cd backend && uv run pytest"
     dir: backend
     cmds:
       - uv run pytest
+
+  db:upgrade:
+    desc: "Apply database migrations against localhost:5432 (equivalent: cd backend && DATABASE_URL=postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar uv run alembic upgrade head)"
+    dir: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar
+      API_SECRET_KEY: dev-only
+    cmds:
+      - uv run alembic upgrade head
+
+  db:revision:
+    desc: 'Create a migration from model changes, e.g. `task db:revision -- "add foo"` (equivalent: cd backend && DATABASE_URL=... uv run alembic revision --autogenerate -m "message")'
+    dir: backend
+    env:
+      DATABASE_URL: postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar
+      API_SECRET_KEY: dev-only
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
 
   web:install:
     desc: "Install frontend dependencies (equivalent: cd web && npm install)"

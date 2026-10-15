@@ -11,6 +11,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: noar
+          POSTGRES_PASSWORD: noar_dev_password
+          POSTGRES_DB: noar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U noar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
 
@@ -27,6 +41,12 @@ jobs:
 
       - name: Type-check (mypy)
         run: uv run mypy src
+
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://noar:noar_dev_password@localhost:5432/noar
+          API_SECRET_KEY: ci-only
 
       - name: Test (pytest)
         run: uv run pytest

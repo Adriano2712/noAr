@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from noar.core.config import get_settings
+from noar.db.base import Base
+from noar.db.models import Check, Incident, Monitor, User  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,11 +23,8 @@ if config.config_file_name is not None:
 # so there is a single source of truth for the connection string.
 config.set_main_option("sqlalchemy.url", str(get_settings().database_url))
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from noar.db.base import Base
-# target_metadata = Base.metadata
-target_metadata = None
+# Importing the models above registers them on Base.metadata.
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
