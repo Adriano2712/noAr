@@ -11,6 +11,7 @@ from noar.alerts.events import AlertContext, AlertEvent
 from noar.core.config import Settings
 from noar.db.models import Check, Incident, Monitor, User
 from noar.domain.enums import MonitorState
+from noar.realtime.hub import MonitorEvent
 from noar.worker.processor import process_monitor
 
 
@@ -31,6 +32,10 @@ def _settings(**overrides: object) -> Settings:
 async def _noop_dispatch(
     user: User, context: AlertContext, settings: Settings, client: httpx.AsyncClient
 ) -> None:
+    return None
+
+
+async def _noop_notify(session: AsyncSession, monitor: Monitor) -> None:
     return None
 
 
@@ -72,7 +77,14 @@ async def test_successful_check_moves_unknown_monitor_to_up(
     db_session: AsyncSession, monitor: Monitor
 ) -> None:
     async with _client(200) as client:
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
 
     assert monitor.state is MonitorState.UP
     assert monitor.locked_until is None
@@ -87,8 +99,22 @@ async def test_reaching_fail_threshold_opens_an_incident(
     db_session: AsyncSession, monitor: Monitor
 ) -> None:
     async with _client(500) as client:
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
 
     assert monitor.state is MonitorState.DOWN
     incident = await _open_incident(db_session, monitor.id)
@@ -99,13 +125,34 @@ async def test_recovering_after_an_incident_resolves_it(
     db_session: AsyncSession, monitor: Monitor
 ) -> None:
     async with _client(500) as client:
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
 
     assert monitor.state is MonitorState.DOWN
 
     async with _client(200) as client:
-        await process_monitor(db_session, monitor, client, _settings(), dispatch=_noop_dispatch)
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=_noop_notify,
+        )
 
     assert monitor.state is MonitorState.UP
     assert await _open_incident(db_session, monitor.id) is None
@@ -128,17 +175,32 @@ async def test_dispatches_an_alert_when_an_incident_opens_and_closes(
 
     async with _client(500) as client:
         await process_monitor(
-            db_session, monitor, client, _settings(), dispatch=recording_dispatch
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=recording_dispatch,
+            notify=_noop_notify,
         )
         await process_monitor(
-            db_session, monitor, client, _settings(), dispatch=recording_dispatch
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=recording_dispatch,
+            notify=_noop_notify,
         )
 
     assert [c.event for c in calls] == [AlertEvent.INCIDENT_OPENED]
 
     async with _client(200) as client:
         await process_monitor(
-            db_session, monitor, client, _settings(), dispatch=recording_dispatch
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=recording_dispatch,
+            notify=_noop_notify,
         )
 
     assert [c.event for c in calls] == [AlertEvent.INCIDENT_OPENED, AlertEvent.INCIDENT_CLOSED]
@@ -156,10 +218,57 @@ async def test_does_not_dispatch_when_nothing_changed(
 
     async with _client(200) as client:
         await process_monitor(
-            db_session, monitor, client, _settings(), dispatch=recording_dispatch
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=recording_dispatch,
+            notify=_noop_notify,
         )
         await process_monitor(
-            db_session, monitor, client, _settings(), dispatch=recording_dispatch
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=recording_dispatch,
+            notify=_noop_notify,
         )
 
     assert calls == []
+
+
+async def test_notifies_only_when_the_state_actually_changes(
+    db_session: AsyncSession, owner: User, monitor: Monitor
+) -> None:
+    events: list[MonitorEvent] = []
+
+    async def recording_notify(session: AsyncSession, m: Monitor) -> None:
+        events.append(
+            MonitorEvent(
+                monitor_id=m.id, owner_id=m.owner_id, is_public=m.is_public, state=m.state
+            )
+        )
+
+    async with _client(200) as client:
+        # UNKNOWN -> UP: a real transition, should notify.
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=recording_notify,
+        )
+        # Still UP: nothing changed, should not notify again.
+        await process_monitor(
+            db_session,
+            monitor,
+            client,
+            _settings(),
+            dispatch=_noop_dispatch,
+            notify=recording_notify,
+        )
+
+    assert [e.state for e in events] == [MonitorState.UP]
+    assert events[0].monitor_id == monitor.id
+    assert events[0].owner_id == owner.id

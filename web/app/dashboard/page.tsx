@@ -5,14 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MonitorForm } from "@/components/MonitorForm";
 import { MonitorList } from "@/components/MonitorList";
-import { api } from "@/lib/api/client";
+import { API_BASE_URL, api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useMonitorEvents, type MonitorEvent } from "@/lib/realtime/useMonitorEvents";
 import type { components } from "@/lib/api/schema";
 
 type Monitor = components["schemas"]["MonitorRead"];
 
 export default function DashboardPage() {
-  const { user, isLoading: isAuthLoading, logout } = useAuth();
+  const { user, token, isLoading: isAuthLoading, logout } = useAuth();
   const router = useRouter();
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [isLoadingMonitors, setIsLoadingMonitors] = useState(true);
@@ -22,6 +23,19 @@ export default function DashboardPage() {
     setMonitors(data ?? []);
     setIsLoadingMonitors(false);
   }, []);
+
+  const handleMonitorEvent = useCallback((event: MonitorEvent) => {
+    setMonitors((current) =>
+      current.map((monitor) =>
+        monitor.id === event.monitor_id ? { ...monitor, state: event.state } : monitor
+      )
+    );
+  }, []);
+
+  useMonitorEvents(
+    token ? `${API_BASE_URL}/monitors/stream?token=${encodeURIComponent(token)}` : null,
+    handleMonitorEvent
+  );
 
   useEffect(() => {
     if (!isAuthLoading && !user) {

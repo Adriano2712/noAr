@@ -11,6 +11,7 @@ const TOKEN_STORAGE_KEY = "noar.token";
 
 interface AuthContextValue {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -27,6 +28,7 @@ async function fetchCurrentUser(): Promise<User | null> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentUser === null) {
           window.localStorage.removeItem(TOKEN_STORAGE_KEY);
           setAuthToken(null);
+        } else {
+          setToken(storedToken);
         }
         setUser(currentUser);
       })
@@ -52,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string): Promise<void> {
-    const token = await loginRequest(email, password);
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token.access_token);
-    setAuthToken(token.access_token);
+    const loggedInToken = await loginRequest(email, password);
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, loggedInToken.access_token);
+    setAuthToken(loggedInToken.access_token);
+    setToken(loggedInToken.access_token);
     setUser(await fetchCurrentUser());
   }
 
@@ -69,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logout(): void {
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
     setAuthToken(null);
+    setToken(null);
     setUser(null);
   }
 
@@ -77,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

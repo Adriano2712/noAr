@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { IncidentList } from "@/components/IncidentList";
 import { MonitorStateBadge } from "@/components/MonitorStateBadge";
 import { ResponseTimeChart } from "@/components/ResponseTimeChart";
-import { api } from "@/lib/api/client";
+import { API_BASE_URL, api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useMonitorEvents, type MonitorEvent } from "@/lib/realtime/useMonitorEvents";
 import type { components } from "@/lib/api/schema";
 
 type Monitor = components["schemas"]["MonitorRead"];
@@ -21,7 +22,7 @@ function uptimePercentage(checks: Check[]): number | null {
 }
 
 export function MonitorDetailClient({ monitorId }: { monitorId: string }) {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, token, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [monitor, setMonitor] = useState<Monitor | null>(null);
   const [checks, setChecks] = useState<Check[]>([]);
@@ -58,6 +59,20 @@ export function MonitorDetailClient({ monitorId }: { monitorId: string }) {
       loadData();
     }
   }, [user, loadData]);
+
+  const handleMonitorEvent = useCallback(
+    (event: MonitorEvent) => {
+      if (event.monitor_id === monitorId) {
+        loadData();
+      }
+    },
+    [monitorId, loadData]
+  );
+
+  useMonitorEvents(
+    token ? `${API_BASE_URL}/monitors/stream?token=${encodeURIComponent(token)}` : null,
+    handleMonitorEvent
+  );
 
   async function handleTogglePublic(): Promise<void> {
     if (!monitor) return;

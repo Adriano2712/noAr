@@ -11,9 +11,11 @@ from noar.alerts.events import AlertContext, AlertEvent
 from noar.core.config import Settings
 from noar.db.models import Check, Incident, Monitor, User
 from noar.domain.monitor_state import MonitorSnapshot, evaluate_check
+from noar.realtime.notify import publish_monitor_event
 from noar.worker.checker import run_http_check
 
 DispatchFn = Callable[[User, AlertContext, Settings, httpx.AsyncClient], Awaitable[None]]
+NotifyFn = Callable[[AsyncSession, Monitor], Awaitable[None]]
 
 
 async def process_monitor(
@@ -23,13 +25,14 @@ async def process_monitor(
     settings: Settings,
     *,
     dispatch: DispatchFn = dispatch_alert,
+    notify: NotifyFn = publish_monitor_event,
 ) -> None:
     """Run one check for `monitor`, apply the state machine, and persist everything.
 
     Releases the scheduling lease and reschedules the monitor on every path,
     including when the check itself fails, so a flaky target never gets
-    stuck unscheduled. `dispatch` is injectable so tests don't make real
-    network calls to send alerts; production code uses the real dispatcher.
+    stuck unscheduled. `dispatch` and `notify` are injectable so tests don't
+    make real network/NOTIFY calls; production code uses the real ones.
     """
     started_at = datetime.now(UTC)
     outcome = await run_http_check(
@@ -101,7 +104,12 @@ async def process_monitor(
     )
     monitor.locked_until = None
 
+    state_changed = evaluation.snapshot.state != snapshot.state
+
     await session.commit()
+
+    if state_changed:
+        await notify(session, monitor)
 
     if alert_context is not None:
         owner = await session.get(User, monitor.owner_id)

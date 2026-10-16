@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { MonitorStateBadge } from "@/components/MonitorStateBadge";
-import { api } from "@/lib/api/client";
+import { API_BASE_URL, api } from "@/lib/api/client";
+import { useMonitorEvents, type MonitorEvent } from "@/lib/realtime/useMonitorEvents";
 import type { components } from "@/lib/api/schema";
 
 type PublicMonitor = components["schemas"]["PublicMonitorRead"];
@@ -44,6 +45,16 @@ export default function StatusPage() {
       .GET("/status/{owner_id}", { params: { path: { owner_id: params.ownerId } } })
       .then(({ data }) => setMonitors(data?.monitors ?? []));
   }, [params.ownerId]);
+
+  const handleMonitorEvent = useCallback((event: MonitorEvent) => {
+    setMonitors((current) =>
+      current?.map((monitor) =>
+        monitor.id === event.monitor_id ? { ...monitor, state: event.state } : monitor
+      ) ?? null
+    );
+  }, []);
+
+  useMonitorEvents(`${API_BASE_URL}/status/${params.ownerId}/stream`, handleMonitorEvent);
 
   if (monitors === null) {
     return null;

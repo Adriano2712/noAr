@@ -41,6 +41,12 @@ ignore = ["B008"]
 python_version = "3.12"
 strict = true
 
+[[tool.mypy.overrides]]
+# asyncpg ships without type stubs/py.typed; only realtime/listener.py uses
+# it directly (everywhere else goes through SQLAlchemy, which is typed).
+module = "asyncpg.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 # One event loop for the whole session: lets the DB engine fixture be
