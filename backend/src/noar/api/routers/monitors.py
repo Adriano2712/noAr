@@ -7,11 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from noar.api.dependencies import get_current_user
 from noar.api.schemas.history import CheckRead, IncidentRead
 from noar.api.schemas.monitors import MonitorCreate, MonitorRead, MonitorUpdate
+from noar.api.validation import validate_outbound_url
 from noar.core.config import Settings, get_settings
 from noar.db.models import Check, Incident, Monitor, User
 from noar.db.session import get_session
 from noar.domain.enums import MonitorState
-from noar.security.ssrf import SSRFBlockedError, ensure_safe_url
 
 router = APIRouter(prefix="/monitors", tags=["monitors"])
 
@@ -25,13 +25,6 @@ async def _get_owned_monitor(
     return monitor
 
 
-async def _validate_url(url: str, settings: Settings) -> None:
-    try:
-        await ensure_safe_url(url, allow_private=settings.ssrf_allow_private_networks)
-    except SSRFBlockedError as exc:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
-
-
 @router.post("", response_model=MonitorRead, status_code=status.HTTP_201_CREATED)
 async def create_monitor(
     payload: MonitorCreate,
@@ -40,7 +33,7 @@ async def create_monitor(
     settings: Settings = Depends(get_settings),
 ) -> Monitor:
     url = str(payload.url)
-    await _validate_url(url, settings)
+    await validate_outbound_url(url, settings)
 
     monitor = Monitor(
         owner_id=current_user.id,
@@ -89,7 +82,7 @@ async def update_monitor(
     updates = payload.model_dump(exclude_unset=True)
     if "url" in updates:
         url = str(updates["url"])
-        await _validate_url(url, settings)
+        await validate_outbound_url(url, settings)
         updates["url"] = url
 
     for field, value in updates.items():

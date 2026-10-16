@@ -9,11 +9,10 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 5 — histórico e gráficos. Cada monitor tem uma página de
-> detalhe com gráfico de tempo de resposta, uptime % e a lista de incidentes
-> passados (`GET /monitors/{id}/checks`, `GET /monitors/{id}/incidents`).
-> Ainda não há SSE em tempo real, verificação de e-mail, alertas nem página
-> de status — isso vem nas próximas fases.
+> **Status:** Fase 6 — alertas. Quando um incidente abre ou fecha, a conta é
+> avisada por e-mail (sempre) e, se configurado em "Notificações" no
+> dashboard, por Telegram e/ou webhook. Ainda não há SSE em tempo real nem
+> página de status pública — isso vem nas próximas fases.
 
 ## Stack
 
@@ -119,6 +118,14 @@ docs/adr/   decisões de arquitetura (ADRs)
 `POST /auth/register` (e-mail + senha) e `POST /auth/login` (devolve um
 token JWT). Use `Authorization: Bearer <token>` nas chamadas a `/monitors` e
 `/auth/me`. Detalhes e trade-offs em [ADR 0006](docs/adr/0006-autenticacao-via-jwt-bearer.md).
+
+## Alertas
+
+Abertura/fechamento de incidente avisa por e-mail (sempre, via Mailpit em
+dev) e, se a conta tiver `telegram_chat_id`/`webhook_url` configurados em
+"Notificações" no dashboard (ou via `PATCH /auth/me`), também por Telegram e
+webhook. Um canal fora do ar nunca impede os outros nem o processamento da
+checagem. Detalhes em [ADR 0008](docs/adr/0008-alertas-best-effort.md).
 
 ## Segurança
 

@@ -52,7 +52,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Me */
+        patch: operations["update_me_auth_me_patch"];
         trace?: never;
     };
     "/monitors": {
@@ -327,6 +328,13 @@ export interface components {
             /** Fail Threshold */
             fail_threshold?: number | null;
         };
+        /** NotificationSettingsUpdate */
+        NotificationSettingsUpdate: {
+            /** Telegram Chat Id */
+            telegram_chat_id?: string | null;
+            /** Webhook Url */
+            webhook_url?: string | null;
+        };
         /** Token */
         Token: {
             /** Access Token */
@@ -356,6 +364,10 @@ export interface components {
             id: string;
             /** Email */
             email: string;
+            /** Telegram Chat Id */
+            telegram_chat_id: string | null;
+            /** Webhook Url */
+            webhook_url: string | null;
             /**
              * Created At
              * Format: date-time
@@ -466,6 +478,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserRead"];
+                };
+            };
+        };
+    };
+    update_me_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

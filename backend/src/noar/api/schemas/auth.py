@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
 
 class UserCreate(BaseModel):
@@ -14,7 +14,14 @@ class UserRead(BaseModel):
 
     id: uuid.UUID
     email: str
+    telegram_chat_id: str | None
+    webhook_url: str | None
     created_at: datetime
+
+
+class NotificationSettingsUpdate(BaseModel):
+    telegram_chat_id: str | None = Field(default=None, max_length=100)
+    webhook_url: HttpUrl | None = None
 
 
 class Token(BaseModel):

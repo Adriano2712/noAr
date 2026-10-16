@@ -4,7 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from noar.api.dependencies import get_current_user
-from noar.api.schemas.auth import Token, UserCreate, UserRead
+from noar.api.schemas.auth import NotificationSettingsUpdate, Token, UserCreate, UserRead
+from noar.api.validation import validate_outbound_url
 from noar.core.config import Settings, get_settings
 from noar.core.security import create_access_token, hash_password, verify_password
 from noar.db.models import User
@@ -50,4 +51,24 @@ async def login(
 
 @router.get("/me", response_model=UserRead)
 async def me(current_user: User = Depends(get_current_user)) -> User:
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+async def update_me(
+    payload: NotificationSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    updates = payload.model_dump(exclude_unset=True)
+    if "webhook_url" in updates and updates["webhook_url"] is not None:
+        updates["webhook_url"] = str(updates["webhook_url"])
+        await validate_outbound_url(updates["webhook_url"], settings)
+
+    for field, value in updates.items():
+        setattr(current_user, field, value)
+
+    await session.commit()
+    await session.refresh(current_user)
     return current_user

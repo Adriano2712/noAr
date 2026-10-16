@@ -1,35 +1,42 @@
 import random
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from noar.db.models import Check, Incident, Monitor
+from noar.alerts.dispatch import dispatch_alert
+from noar.alerts.events import AlertContext, AlertEvent
+from noar.core.config import Settings
+from noar.db.models import Check, Incident, Monitor, User
 from noar.domain.monitor_state import MonitorSnapshot, evaluate_check
 from noar.worker.checker import run_http_check
+
+DispatchFn = Callable[[User, AlertContext, Settings, httpx.AsyncClient], Awaitable[None]]
 
 
 async def process_monitor(
     session: AsyncSession,
     monitor: Monitor,
     client: httpx.AsyncClient,
+    settings: Settings,
     *,
-    allow_private: bool,
-    jitter_fraction: float,
+    dispatch: DispatchFn = dispatch_alert,
 ) -> None:
     """Run one check for `monitor`, apply the state machine, and persist everything.
 
     Releases the scheduling lease and reschedules the monitor on every path,
     including when the check itself fails, so a flaky target never gets
-    stuck unscheduled.
+    stuck unscheduled. `dispatch` is injectable so tests don't make real
+    network calls to send alerts; production code uses the real dispatcher.
     """
     started_at = datetime.now(UTC)
     outcome = await run_http_check(
         client,
         monitor.url,
         timeout_seconds=monitor.timeout_seconds,
-        allow_private=allow_private,
+        allow_private=settings.ssrf_allow_private_networks,
     )
     finished_at = datetime.now(UTC)
 
@@ -57,8 +64,17 @@ async def process_monitor(
     monitor.consecutive_failures = evaluation.snapshot.consecutive_failures
     monitor.consecutive_successes = evaluation.snapshot.consecutive_successes
 
+    alert_context: AlertContext | None = None
+
     if evaluation.opened_incident:
         session.add(Incident(monitor_id=monitor.id, started_at=finished_at))
+        alert_context = AlertContext(
+            event=AlertEvent.INCIDENT_OPENED,
+            monitor_name=monitor.name,
+            monitor_url=monitor.url,
+            incident_started_at=finished_at,
+            incident_resolved_at=None,
+        )
 
     if evaluation.closed_incident:
         open_incident = await session.scalar(
@@ -69,11 +85,25 @@ async def process_monitor(
         )
         if open_incident is not None:
             open_incident.resolved_at = finished_at
+            alert_context = AlertContext(
+                event=AlertEvent.INCIDENT_CLOSED,
+                monitor_name=monitor.name,
+                monitor_url=monitor.url,
+                incident_started_at=open_incident.started_at,
+                incident_resolved_at=finished_at,
+            )
 
-    jitter_seconds = monitor.interval_seconds * jitter_fraction * (2 * random.random() - 1)
+    jitter_seconds = monitor.interval_seconds * settings.scheduler_jitter_fraction * (
+        2 * random.random() - 1
+    )
     monitor.next_check_at = finished_at + timedelta(
         seconds=monitor.interval_seconds + jitter_seconds
     )
     monitor.locked_until = None
 
     await session.commit()
+
+    if alert_context is not None:
+        owner = await session.get(User, monitor.owner_id)
+        if owner is not None:
+            await dispatch(owner, alert_context, settings, client)

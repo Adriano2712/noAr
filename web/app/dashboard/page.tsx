@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MonitorForm } from "@/components/MonitorForm";
 import { MonitorList } from "@/components/MonitorList";
@@ -79,12 +80,20 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold text-black dark:text-white">Meus monitores</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{user.email}</p>
         </div>
-        <button
-          onClick={logout}
-          className="rounded-md border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
-        >
-          Sair
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/settings"
+            className="rounded-md border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+          >
+            Notificações
+          </Link>
+          <button
+            onClick={logout}
+            className="rounded-md border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+          >
+            Sair
+          </button>
+        </div>
       </div>
 
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">

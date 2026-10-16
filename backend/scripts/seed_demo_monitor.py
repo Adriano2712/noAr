@@ -6,6 +6,13 @@ open an incident when demo-target goes down, and recover when it comes
 back. Safe to run more than once: it reuses the existing row by email/url
 instead of creating duplicates.
 
+Also points the demo user's webhook at webhook-receiver directly through
+SQLAlchemy, not the API: PATCH /auth/me runs the same SSRF guard as monitor
+creation (ADR 0005) and would reject a webhook URL on the compose network's
+private range, same as it would reject demo-target as a monitor URL -- that
+guard is correct for the API (real webhook URLs are external), so the demo
+data bypasses it here instead of weakening it there.
+
 Usage: uv run python scripts/seed_demo_monitor.py
 """
 
@@ -26,7 +33,7 @@ async def seed() -> None:
     async with async_session_factory() as session:
         user = await session.scalar(select(User).where(User.email == DEMO_EMAIL))
         if user is None:
-            user = User(email=DEMO_EMAIL)
+            user = User(email=DEMO_EMAIL, webhook_url=f"{settings.webhook_receiver_url}/noar-demo")
             session.add(user)
             await session.flush()
             print(f"created user {DEMO_EMAIL}")

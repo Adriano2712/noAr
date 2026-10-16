@@ -21,13 +21,7 @@ async def _process_one(
         if monitor is None:
             return
         try:
-            await process_monitor(
-                session,
-                monitor,
-                client,
-                allow_private=settings.ssrf_allow_private_networks,
-                jitter_fraction=settings.scheduler_jitter_fraction,
-            )
+            await process_monitor(session, monitor, client, settings)
         except Exception:
             logger.exception("check failed for monitor %s", monitor_id)
             return
