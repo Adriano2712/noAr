@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { components } from "@/lib/api/schema";
 import { MonitorStateBadge } from "./MonitorStateBadge";
 
@@ -26,7 +27,12 @@ export function MonitorList({ monitors, onPause, onResume, onDelete }: MonitorLi
         >
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-black dark:text-white">{monitor.name}</span>
+              <Link
+                href={`/dashboard/monitors/${monitor.id}`}
+                className="font-medium text-black underline dark:text-white"
+              >
+                {monitor.name}
+              </Link>
               <MonitorStateBadge state={monitor.state} />
             </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{monitor.url}</p>

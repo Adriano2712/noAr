@@ -41,9 +41,12 @@ async def test_claims_a_due_monitor_and_sets_the_lease(
     db_session.add(monitor)
     await db_session.flush()
 
-    claimed = await claim_due_monitors(db_session, limit=10, lease_seconds=60)
+    # limit=1000 and asserting by id, not by exact list equality: this reuses
+    # the dev database (see tests/conftest.py), which can already have other
+    # due monitors sitting in it from manual/e2e runs.
+    claimed = await claim_due_monitors(db_session, limit=1000, lease_seconds=60)
 
-    assert [m.id for m in claimed] == [monitor.id]
+    assert monitor.id in {m.id for m in claimed}
     assert monitor.locked_until is not None
     assert monitor.locked_until > datetime.now(UTC)
 
@@ -51,43 +54,47 @@ async def test_claims_a_due_monitor_and_sets_the_lease(
 async def test_does_not_claim_a_monitor_scheduled_in_the_future(
     db_session: AsyncSession, owner: User
 ) -> None:
-    db_session.add(_monitor(owner.id, next_check_at=FUTURE))
+    monitor = _monitor(owner.id, next_check_at=FUTURE)
+    db_session.add(monitor)
     await db_session.flush()
 
-    claimed = await claim_due_monitors(db_session, limit=10, lease_seconds=60)
+    claimed = await claim_due_monitors(db_session, limit=1000, lease_seconds=60)
 
-    assert claimed == []
+    assert monitor.id not in {m.id for m in claimed}
 
 
 async def test_does_not_claim_a_paused_monitor(db_session: AsyncSession, owner: User) -> None:
-    db_session.add(_monitor(owner.id, state=MonitorState.PAUSED))
+    monitor = _monitor(owner.id, state=MonitorState.PAUSED)
+    db_session.add(monitor)
     await db_session.flush()
 
-    claimed = await claim_due_monitors(db_session, limit=10, lease_seconds=60)
+    claimed = await claim_due_monitors(db_session, limit=1000, lease_seconds=60)
 
-    assert claimed == []
+    assert monitor.id not in {m.id for m in claimed}
 
 
 async def test_does_not_reclaim_a_monitor_under_an_active_lease(
     db_session: AsyncSession, owner: User
 ) -> None:
-    db_session.add(_monitor(owner.id, locked_until=FUTURE))
+    monitor = _monitor(owner.id, locked_until=FUTURE)
+    db_session.add(monitor)
     await db_session.flush()
 
-    claimed = await claim_due_monitors(db_session, limit=10, lease_seconds=60)
+    claimed = await claim_due_monitors(db_session, limit=1000, lease_seconds=60)
 
-    assert claimed == []
+    assert monitor.id not in {m.id for m in claimed}
 
 
 async def test_reclaims_a_monitor_once_its_lease_expired(
     db_session: AsyncSession, owner: User
 ) -> None:
-    db_session.add(_monitor(owner.id, locked_until=PAST))
+    monitor = _monitor(owner.id, locked_until=PAST)
+    db_session.add(monitor)
     await db_session.flush()
 
-    claimed = await claim_due_monitors(db_session, limit=10, lease_seconds=60)
+    claimed = await claim_due_monitors(db_session, limit=1000, lease_seconds=60)
 
-    assert len(claimed) == 1
+    assert monitor.id in {m.id for m in claimed}
 
 
 async def test_respects_the_batch_limit(db_session: AsyncSession, owner: User) -> None:

@@ -1,13 +1,14 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from noar.api.dependencies import get_current_user
+from noar.api.schemas.history import CheckRead, IncidentRead
 from noar.api.schemas.monitors import MonitorCreate, MonitorRead, MonitorUpdate
 from noar.core.config import Settings, get_settings
-from noar.db.models import Monitor, User
+from noar.db.models import Check, Incident, Monitor, User
 from noar.db.session import get_session
 from noar.domain.enums import MonitorState
 from noar.security.ssrf import SSRFBlockedError, ensure_safe_url
@@ -137,3 +138,35 @@ async def resume_monitor(
     await session.commit()
     await session.refresh(monitor)
     return monitor
+
+
+@router.get("/{monitor_id}/checks", response_model=list[CheckRead])
+async def list_checks(
+    monitor_id: uuid.UUID,
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[Check]:
+    await _get_owned_monitor(monitor_id, current_user, session)
+    result = await session.scalars(
+        select(Check)
+        .where(Check.monitor_id == monitor_id)
+        .order_by(Check.started_at.desc())
+        .limit(limit)
+    )
+    return list(result.all())
+
+
+@router.get("/{monitor_id}/incidents", response_model=list[IncidentRead])
+async def list_incidents(
+    monitor_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[Incident]:
+    await _get_owned_monitor(monitor_id, current_user, session)
+    result = await session.scalars(
+        select(Incident)
+        .where(Incident.monitor_id == monitor_id)
+        .order_by(Incident.started_at.desc())
+    )
+    return list(result.all())

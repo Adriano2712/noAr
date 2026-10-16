@@ -19,6 +19,13 @@ test("register, create a monitor, pause/resume it, then delete it", async ({ pag
   await expect(monitorRow).toBeVisible();
   await expect(monitorRow.getByText("Desconhecido")).toBeVisible();
 
+  await monitorRow.getByRole("link", { name: "Exemplo E2E" }).click();
+  await expect(page.getByRole("heading", { name: "Exemplo E2E" })).toBeVisible();
+  await expect(page.getByText("https://example.com")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Incidentes" })).toBeVisible();
+  await page.getByRole("link", { name: "← Voltar" }).click();
+  await expect(page).toHaveURL("/dashboard");
+
   await monitorRow.getByRole("button", { name: "Pausar" }).click();
   await expect(monitorRow.getByText("Pausado")).toBeVisible();
 

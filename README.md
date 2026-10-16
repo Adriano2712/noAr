@@ -9,11 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 4 — frontend ligado à API. Cadastro, login e um painel
-> listando os monitores da conta logada (criar, pausar, retomar, excluir),
-> com tipos do cliente gerados a partir do OpenAPI da API. Ainda não há
-> histórico de checks/incidentes, gráficos, SSE em tempo real, verificação
-> de e-mail, alertas nem página de status — isso vem nas próximas fases.
+> **Status:** Fase 5 — histórico e gráficos. Cada monitor tem uma página de
+> detalhe com gráfico de tempo de resposta, uptime % e a lista de incidentes
+> passados (`GET /monitors/{id}/checks`, `GET /monitors/{id}/incidents`).
+> Ainda não há SSE em tempo real, verificação de e-mail, alertas nem página
+> de status — isso vem nas próximas fases.
 
 ## Stack
 
