@@ -145,6 +145,25 @@ privados/loopback/link-local resolvidos na hora (ver
 fecha a janela de DNS rebinding, documentado na própria ADR como
 endurecimento futuro.
 
+## Limitações conhecidas
+
+- **Falso "fora do ar" em sites com proteção anti-bot agressiva.** O worker
+  faz a checagem com `httpx`, sem navegador nem execução de JavaScript. Um
+  CDN que bloqueia por fingerprint de cliente HTTP (TLS/HTTP2), não só por
+  User-Agent, pode devolver 403 (geralmente uma página de "verificação")
+  para o worker mesmo com o site respondendo normalmente a qualquer
+  navegador real. O monitor reporta "down" porque, do ponto de vista dele,
+  a resposta não foi 2xx/3xx — não há como diferenciar isso de um site
+  realmente fora do ar sem imitar um navegador de verdade. Se isso
+  acontecer com um site seu, a solução é liberar o IP de onde o worker roda
+  na allowlist de bot-protection do próprio CDN/hospedagem; não é algo que
+  o NoAr consiga contornar de forma confiável.
+- **E-mail sempre via Mailpit em dev.** Alertas por e-mail nunca saem da
+  máquina em desenvolvimento — eles ficam só em http://localhost:8025. Se
+  o endereço cadastrado na conta (`PATCH /auth/me`) estiver incorreto, o
+  e-mail "chega" no Mailpit mesmo assim; não há validação de que o
+  endereço realmente existe.
+
 ## Licença
 
 [MIT](LICENSE)
