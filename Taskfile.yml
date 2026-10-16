@@ -97,10 +97,16 @@ tasks:
       - npm run test
 
   web:e2e:
-    desc: "Run frontend e2e tests; requires `task up` first (equivalent: cd web && npm run test:e2e)"
+    desc: "Run frontend e2e tests against a production build on its own port (3100); requires api+db running (`task up`, or `docker compose up -d db api`). Equivalent: cd web && npm run test:e2e"
     dir: web
     cmds:
       - npm run test:e2e
+
+  web:generate-types:
+    desc: "Regenerate the typed API client from the running API's OpenAPI schema; requires `task up` first (equivalent: cd web && npm run generate:types)"
+    dir: web
+    cmds:
+      - npm run generate:types
 
   db:seed:
     desc: "Seed a demo user + monitor pointing at demo-target; requires `task up` first (equivalent: docker compose exec worker uv run python scripts/seed_demo_monitor.py)"

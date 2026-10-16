@@ -9,11 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 3 — CRUD de monitores + autenticação. Cada conta se
-> registra, faz login (token JWT) e só enxerga/gerencia os próprios
-> monitores (`POST/GET/PATCH/DELETE /monitors`, `.../pause`, `.../resume`).
-> Ainda não há frontend ligado à API, verificação de e-mail, alertas nem
-> página de status — isso vem nas próximas fases.
+> **Status:** Fase 4 — frontend ligado à API. Cadastro, login e um painel
+> listando os monitores da conta logada (criar, pausar, retomar, excluir),
+> com tipos do cliente gerados a partir do OpenAPI da API. Ainda não há
+> histórico de checks/incidentes, gráficos, SSE em tempo real, verificação
+> de e-mail, alertas nem página de status — isso vem nas próximas fases.
 
 ## Stack
 
@@ -23,7 +23,8 @@ contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr
 - **Banco:** PostgreSQL 16. Sem Redis — agendamento via Postgres
   (`SELECT ... FOR UPDATE SKIP LOCKED`, ver [ADR 0003](docs/adr/0003-agendamento-via-postgres-sem-fila-externa.md)).
 - **Frontend:** Next.js (App Router) + TypeScript + Tailwind, gráficos com
-  Recharts.
+  Recharts. Cliente de API tipado a partir do OpenAPI da API
+  ([openapi-typescript](https://openapi-ts.dev/) + [openapi-fetch](https://openapi-ts.dev/openapi-fetch/)).
 - **Tempo real:** Server-Sent Events (SSE).
 - **Qualidade:** ruff, mypy, pytest, Vitest, Playwright, pre-commit.
 - **CI:** GitHub Actions, espelhando os comandos locais (`task ci`).
@@ -92,8 +93,17 @@ parênteses.
 | `task web:lint` | Lint do frontend (`cd web && npm run lint`) |
 | `task web:typecheck` | Checagem de tipos do frontend (`cd web && npm run typecheck`) |
 | `task web:test` | Testes unitários do frontend (`cd web && npm run test`) |
-| `task web:e2e` | Testes end-to-end (requer `task up` rodando) |
+| `task web:e2e` | Testes end-to-end, contra um build de produção próprio (porta 3100, sem o servidor de dev do `docker compose`); requer `api`/`db` rodando |
+| `task web:generate-types` | Regenera `web/lib/api/schema.d.ts` a partir do OpenAPI da API; requer `task up` |
 | `task ci` | Roda tudo que a CI roda: lint + tipos + testes, backend e frontend |
+
+## Adicionando uma dependência no frontend
+
+`npm install` no host não é suficiente: o `web` roda em Docker com
+`node_modules` num volume anônimo, criado uma vez a partir do `Dockerfile`.
+Depois de instalar no host, rode também `docker compose exec web npm install`
+(ou `docker compose up -d --build web` para reconstruir a imagem) para o
+container enxergar o pacote novo.
 
 ## Estrutura do repositório
 

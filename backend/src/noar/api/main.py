@@ -10,7 +10,7 @@ app = FastAPI(title="NoAr API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=settings.cors_allowed_origins_list,
     allow_methods=["*"],
     allow_headers=["*"],
 )

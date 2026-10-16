@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     api_secret_key: str
     api_port: int = 8000
     access_token_expire_minutes: int = 60 * 24
-    frontend_origin: str = "http://localhost:3000"
+    # Comma-separated: the Next.js dev server (docker-compose) and the port
+    # Playwright's own production-build server uses for e2e (see
+    # web/playwright.config.ts) are different origins in the browser's eyes.
+    cors_allowed_origins: str = "http://localhost:3000,http://localhost:3100"
 
     smtp_host: str = "mailpit"
     smtp_port: int = 1025
@@ -36,6 +39,10 @@ class Settings(BaseSettings):
     # Off by default (blocks private/loopback/link-local targets); the local
     # Docker Compose demo turns this on so the worker can reach demo-target.
     ssrf_allow_private_networks: bool = False
+
+    @property
+    def cors_allowed_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 @lru_cache

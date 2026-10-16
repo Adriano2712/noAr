@@ -19,7 +19,9 @@ revogação nesta fase).
   (HS256), válido por `ACCESS_TOKEN_EXPIRE_MINUTES` (padrão: 24h).
 - O frontend manda `Authorization: Bearer <token>` em cada chamada à API.
 - Senha com hash via argon2 (`argon2-cffi`), recomendado pela OWASP.
-- CORS liberado apenas para `FRONTEND_ORIGIN` (padrão `http://localhost:3000`).
+- CORS liberado apenas para `CORS_ALLOWED_ORIGINS` (lista separada por vírgula;
+  padrão cobre o Next em dev e o build de produção que o Playwright usa nos
+  testes e2e — ver [web/playwright.config.ts](../../web/playwright.config.ts)).
 
 ## Consequências
 
