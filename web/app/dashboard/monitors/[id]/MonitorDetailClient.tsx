@@ -59,6 +59,15 @@ export function MonitorDetailClient({ monitorId }: { monitorId: string }) {
     }
   }, [user, loadData]);
 
+  async function handleTogglePublic(): Promise<void> {
+    if (!monitor) return;
+    await api.PATCH("/monitors/{monitor_id}", {
+      params: { path: { monitor_id: monitorId } },
+      body: { is_public: !monitor.is_public },
+    });
+    await loadData();
+  }
+
   if (isAuthLoading || !user || isLoadingData || !monitor) {
     return null;
   }
@@ -77,8 +86,25 @@ export function MonitorDetailClient({ monitorId }: { monitorId: string }) {
             <h1 className="text-2xl font-semibold text-black dark:text-white">{monitor.name}</h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{monitor.url}</p>
           </div>
-          <MonitorStateBadge state={monitor.state} />
+          <div className="flex items-center gap-3">
+            <MonitorStateBadge state={monitor.state} />
+            <button
+              onClick={handleTogglePublic}
+              className="rounded-md border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+            >
+              {monitor.is_public ? "Tornar privado" : "Tornar público"}
+            </button>
+          </div>
         </div>
+
+        {monitor.is_public && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Visível em{" "}
+            <Link href={`/status/${user.id}`} className="underline" target="_blank">
+              /status/{user.id}
+            </Link>
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-md border border-zinc-200 p-4 dark:border-zinc-800">

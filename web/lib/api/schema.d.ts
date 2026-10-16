@@ -161,6 +161,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/status/{owner_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Status Page
+         * @description Public, unauthenticated: an account's status page.
+         *
+         *     Always 200, even for an owner_id with no public monitors or that
+         *     doesn't exist -- an empty list either way, so this can't be used to
+         *     probe which user IDs are real accounts.
+         */
+        get: operations["get_status_page_status__owner_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -299,6 +323,8 @@ export interface components {
             consecutive_failures: number;
             /** Consecutive Successes */
             consecutive_successes: number;
+            /** Is Public */
+            is_public: boolean;
             /**
              * Created At
              * Format: date-time
@@ -327,6 +353,8 @@ export interface components {
             timeout_seconds?: number | null;
             /** Fail Threshold */
             fail_threshold?: number | null;
+            /** Is Public */
+            is_public?: boolean | null;
         };
         /** NotificationSettingsUpdate */
         NotificationSettingsUpdate: {
@@ -334,6 +362,26 @@ export interface components {
             telegram_chat_id?: string | null;
             /** Webhook Url */
             webhook_url?: string | null;
+        };
+        /** PublicMonitorRead */
+        PublicMonitorRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            state: components["schemas"]["MonitorState"];
+            /** Uptime Percentage */
+            uptime_percentage: number | null;
+        };
+        /** StatusPageRead */
+        StatusPageRead: {
+            /** Monitors */
+            monitors: components["schemas"]["PublicMonitorRead"][];
         };
         /** Token */
         Token: {
@@ -776,6 +824,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncidentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_status_page_status__owner_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                owner_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusPageRead"];
                 };
             };
             /** @description Validation Error */

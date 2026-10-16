@@ -20,6 +20,7 @@ class MonitorUpdate(BaseModel):
     interval_seconds: int | None = Field(default=None, ge=10, le=86400)
     timeout_seconds: int | None = Field(default=None, ge=1, le=60)
     fail_threshold: int | None = Field(default=None, ge=1, le=20)
+    is_public: bool | None = None
 
 
 class MonitorRead(BaseModel):
@@ -34,5 +35,6 @@ class MonitorRead(BaseModel):
     state: MonitorState
     consecutive_failures: int
     consecutive_successes: int
+    is_public: bool
     created_at: datetime
     updated_at: datetime

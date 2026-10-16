@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from noar.api.routers import auth, monitors
+from noar.api.routers import auth, monitors, status
 from noar.core.config import get_settings
 
 settings = get_settings()
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(monitors.router)
+app.include_router(status.router)
 
 
 @app.get("/health")

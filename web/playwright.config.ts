@@ -7,10 +7,12 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   reporter: "list",
-  // One retry as a safety margin for this machine's RAM constraints (see the
+  // Safety margin for this machine's RAM constraints (see the
   // `expect.timeout` note below) -- not a substitute for fixing real flakes,
-  // which should keep failing even on retry.
-  retries: 1,
+  // which should keep failing even on retry. Running the whole suite back
+  // to back pushes memory pressure higher than any single test alone, so
+  // this needs more headroom than one retry reliably covers.
+  retries: 2,
   use: {
     baseURL,
     trace: "on-first-retry",

@@ -9,10 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 6 — alertas. Quando um incidente abre ou fecha, a conta é
-> avisada por e-mail (sempre) e, se configurado em "Notificações" no
-> dashboard, por Telegram e/ou webhook. Ainda não há SSE em tempo real nem
-> página de status pública — isso vem nas próximas fases.
+> **Status:** Fase 7 — página de status pública. Cada monitor pode ser
+> marcado como público na sua página de detalhe; os marcados aparecem,
+> sem necessidade de login, em `/status/{id-da-conta}`. Ainda não há SSE em
+> tempo real (a página busca os dados uma vez, ao carregar) — isso vem na
+> próxima fase.
 
 ## Stack
 
@@ -126,6 +127,13 @@ dev) e, se a conta tiver `telegram_chat_id`/`webhook_url` configurados em
 "Notificações" no dashboard (ou via `PATCH /auth/me`), também por Telegram e
 webhook. Um canal fora do ar nunca impede os outros nem o processamento da
 checagem. Detalhes em [ADR 0008](docs/adr/0008-alertas-best-effort.md).
+
+## Página de status
+
+Qualquer monitor pode ser marcado como público na sua página de detalhe.
+Monitores públicos de uma conta aparecem, sem login, em
+`/status/{id-da-conta}` (o link "Página de status" no dashboard já aponta
+para a sua). Detalhes e trade-offs em [ADR 0009](docs/adr/0009-pagina-de-status-publica.md).
 
 ## Segurança
 

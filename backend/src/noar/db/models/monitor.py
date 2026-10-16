@@ -31,6 +31,9 @@ class Monitor(Base):
     consecutive_failures: Mapped[int] = mapped_column(default=0)
     consecutive_successes: Mapped[int] = mapped_column(default=0)
 
+    # Opt-in: shown on the account's public status page (Fase 7) when true.
+    is_public: Mapped[bool] = mapped_column(default=False)
+
     # Scheduling lease (ADR 0003); the worker starts using these in a later phase.
     next_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
