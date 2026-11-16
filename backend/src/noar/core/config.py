@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # Docker Compose demo turns this on so the worker can reach demo-target.
     ssrf_allow_private_networks: bool = False
 
+    # Runs the scheduler loop inside the API process instead of a separate
+    # worker. Meant for free hosting tiers that only offer web services (e.g.
+    # Render's free plan); the docker-compose setup keeps the worker apart.
+    run_worker_in_api: bool = False
+
     @property
     def cors_allowed_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]

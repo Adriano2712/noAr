@@ -52,9 +52,16 @@ async def run_once(client: httpx.AsyncClient, settings: Settings) -> int:
 async def scheduler_loop(settings: Settings) -> None:
     async with httpx.AsyncClient() as client:
         while True:
-            checked = await run_once(client, settings)
-            if checked:
-                logger.info("processed %d monitor(s)", checked)
+            # A failed round (e.g. the database briefly unreachable) must not
+            # end the loop: inside the API process (RUN_WORKER_IN_API) there is
+            # no supervisor restarting it, so checks would silently stop.
+            try:
+                checked = await run_once(client, settings)
+            except Exception:
+                logger.exception("scheduler round failed, retrying after the poll interval")
+            else:
+                if checked:
+                    logger.info("processed %d monitor(s)", checked)
             await asyncio.sleep(settings.scheduler_poll_interval_seconds)
 
 

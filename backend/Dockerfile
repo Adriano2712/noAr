@@ -18,4 +18,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "noar.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command for hosted deploys (docker-compose overrides it): apply
+# pending migrations, then serve on the port the platform assigns ($PORT on
+# Render), falling back to 8000.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn noar.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
