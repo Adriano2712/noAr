@@ -9,11 +9,11 @@ Projeto de portfólio: foco em agendamento confiável, concorrência, modelagem
 de dados de série temporal, segurança aplicada (SSRF e isolamento entre
 contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr).
 
-> **Status:** Fase 7 — página de status pública. Cada monitor pode ser
-> marcado como público na sua página de detalhe; os marcados aparecem,
-> sem necessidade de login, em `/status/{id-da-conta}`. Ainda não há SSE em
-> tempo real (a página busca os dados uma vez, ao carregar) — isso vem na
-> próxima fase.
+> **Status:** Fase 8 — atualizações em tempo real. Dashboard, detalhe do
+> monitor e página de status pública se atualizam sozinhos quando um
+> monitor muda de estado, via Server-Sent Events alimentados por
+> `LISTEN`/`NOTIFY` do Postgres, sem fila externa (ver
+> [ADR 0010](docs/adr/0010-tempo-real-via-postgres-listen-notify.md)).
 
 ## Telas
 
