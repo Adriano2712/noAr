@@ -203,7 +203,10 @@ background workers, então o agendador roda dentro da API
 (`RUN_WORKER_IN_API=true`). Motivos e trade-offs em
 [ADR 0011](docs/adr/0011-deploy-gratuito.md).
 
-1. **Banco (Supabase).** Crie um projeto e copie, em *Connect*, a string do
+1. **Banco (Supabase).** Crie um projeto na região *East US (North
+   Virginia)*, a mesma do Render no `render.yaml`, com **Data API
+   desligada** (o NoAr acessa o banco só pela própria API; com ela ligada,
+   as tabelas, inclusive a de usuários, ficariam expostas via REST). Copie, em *Connect*, a string do
    **Session pooler** (porta 5432; não use o *transaction pooler*, que
    quebra o `LISTEN` do tempo real). Troque o começo `postgresql://` por
    `postgresql+asyncpg://` e acrescente `?ssl=require` no final.

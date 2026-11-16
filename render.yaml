@@ -5,6 +5,9 @@ services:
     name: noar-api
     runtime: docker
     plan: free
+    # Same AWS region as the Supabase project (us-east-1): every query
+    # crosses this link, so keep it in-region.
+    region: virginia
     rootDir: backend
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
