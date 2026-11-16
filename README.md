@@ -195,6 +195,33 @@ endurecimento futuro.
   e-mail "chega" no Mailpit mesmo assim; não há validação de que o
   endereço realmente existe.
 
+## Deploy (gratuito)
+
+Tudo em planos gratuitos: frontend na Vercel, API e agendador num único web
+service do Render, banco no Supabase. O plano gratuito do Render não tem
+background workers, então o agendador roda dentro da API
+(`RUN_WORKER_IN_API=true`). Motivos e trade-offs em
+[ADR 0011](docs/adr/0011-deploy-gratuito.md).
+
+1. **Banco (Supabase).** Crie um projeto e copie, em *Connect*, a string do
+   **Session pooler** (porta 5432; não use o *transaction pooler*, que
+   quebra o `LISTEN` do tempo real). Troque o começo `postgresql://` por
+   `postgresql+asyncpg://` e acrescente `?ssl=require` no final.
+2. **API (Render).** *New → Blueprint*, aponte para este repositório e o
+   Render lê o [`render.yaml`](render.yaml). Preencha `DATABASE_URL` com a
+   string do passo 1 e `CORS_ALLOWED_ORIGINS` com o domínio da Vercel (dá
+   para ajustar depois do passo 3). As migrações rodam sozinhas a cada
+   início do container.
+3. **Frontend (Vercel).** Importe o repositório com *Root Directory* `web`
+   e defina `NEXT_PUBLIC_API_BASE_URL` com a URL do Render (por exemplo,
+   `https://noar-api.onrender.com`).
+4. **Manter acordado.** O Render desliga o serviço após 15 minutos sem
+   tráfego. Agende em um serviço como o [cron-job.org](https://cron-job.org)
+   uma chamada a `https://<sua-api>.onrender.com/health` a cada 10 minutos.
+
+Alertas por e-mail só saem com um SMTP real (`SMTP_HOST`, `SMTP_PORT`,
+`SMTP_FROM`); sem ele, Telegram e webhook continuam funcionando.
+
 ## Licença
 
 [MIT](LICENSE)

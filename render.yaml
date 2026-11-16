@@ -1,0 +1,30 @@
+# Render Blueprint: API + scheduler in one free web service (ADR 0011).
+# Frontend goes to Vercel and the database to Supabase; see README "Deploy".
+services:
+  - type: web
+    name: noar-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      # Free tier has no background workers: run the scheduler in the API.
+      - key: RUN_WORKER_IN_API
+        value: "true"
+      - key: SSRF_ALLOW_PRIVATE_NETWORKS
+        value: "false"
+      - key: API_SECRET_KEY
+        generateValue: true
+      # Supabase session pooler URL, in the form
+      # postgresql+asyncpg://postgres.<ref>:<password>@<host>:5432/postgres?ssl=require
+      - key: DATABASE_URL
+        sync: false
+      # The Vercel domain, e.g. https://noar.vercel.app (comma-separated).
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
