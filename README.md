@@ -15,6 +15,37 @@ contas) e operação. Veja as decisões de arquitetura em [`docs/adr/`](docs/adr
 > tempo real (a página busca os dados uma vez, ao carregar) — isso vem na
 > próxima fase.
 
+## Telas
+
+**Dashboard:** monitores da conta com o estado atual de cada um, atualizado
+em tempo real.
+
+<p>
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard com quatro monitores, três no ar e um fora do ar" width="49%">
+  <img src="docs/screenshots/dashboard-dark.png" alt="Dashboard no tema escuro" width="49%">
+</p>
+
+**Detalhe do monitor:** uptime das últimas checagens, gráfico de tempo de
+resposta e histórico de incidentes. À direita, um monitor fora do ar com
+incidente em aberto.
+
+<p>
+  <img src="docs/screenshots/monitor-detalhe.png" alt="Detalhe de um monitor no ar, com 100% de uptime e gráfico de tempo de resposta" width="49%">
+  <img src="docs/screenshots/monitor-incidente.png" alt="Detalhe de um monitor fora do ar, com 0% de uptime e um incidente em aberto" width="49%">
+</p>
+
+**Página de status pública** (sem login) e **configuração de notificações**
+(Telegram e webhook, além do e-mail):
+
+<p>
+  <img src="docs/screenshots/pagina-de-status.png" alt="Página de status pública avisando que alguns serviços estão fora do ar" width="49%">
+  <img src="docs/screenshots/configuracoes.png" alt="Tela de configuração de notificações" width="49%">
+</p>
+
+**Login:**
+
+<img src="docs/screenshots/login.png" alt="Tela de login" width="49%">
+
 ## Stack
 
 - **Backend:** Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 assíncrono
